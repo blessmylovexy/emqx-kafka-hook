@@ -18,6 +18,7 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
+-include_lib("brod/include/brod_int.hrl").
 
 -define(APP, emqx_kafka_hook).
 
@@ -220,17 +221,15 @@ on_message_acked(#{clientid := _ClientId}, Message = #message{topic = Topic, fla
 
 
 brod_init() ->
-    {ok, _} = application:ensure_all_started(brod),
-    KafkaTopic =  "test-http2kafka",
+    KafkaTopic =  application:get_env(?APP, topic, undefined),
     KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
 
     ClientConfig = [{reconnect_cool_down_seconds, 10},
                     { query_api_versions, false}],
-
+                    
+    {ok, _} = application:ensure_all_started(brod),
     ok = brod:start_client(KafkaBootstrapEndpoints, brod_client, ClientConfig),
-    ok = brod:start_producer(brod_client, KafkaTopic, _ProducerConfig = []),
-    ?LOG(info, "Init brod with topic:~s", [KafkaTopic]).
-
+    ok = brod:start_producer(brod_client, KafkaTopic, _ProducerConfig = []).
 
 produce_kafka_payload(Key, Message) ->
     Topic = application:get_env(?APP, topic, undefined),
