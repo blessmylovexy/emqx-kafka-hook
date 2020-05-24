@@ -18,7 +18,6 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
--include("brod/include/brod.hrl").
 
 -define(APP, emqx_kafka_hook).
 
