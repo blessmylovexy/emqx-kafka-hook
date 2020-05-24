@@ -1,0 +1,14 @@
+{application, emqx_kafka_hook,
+ [{description, "EMQ X KafkaHook Plugin"},
+  {vsn, "git"},
+  {modules, []},
+  {registered, [emqx_kafka_hook_sup]},
+  {applications, [kernel,stdlib,ekaf]},
+  {mod, {emqx_kafka_hook_app,[]}},
+  {env, []},
+  {licenses, ["Apache-2.0"]},
+  {maintainers, ["blessmylovexy@gmail.com"]},
+  {links, [{"Homepage", "https://emqx.io/"},
+           {"Github", "https://github.com/blessmylovexy/emqx-kafka-hook"}
+          ]}
+ ]}.

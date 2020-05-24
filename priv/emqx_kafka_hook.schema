@@ -1,0 +1,19 @@
+{mapping, "kafka.hook.host", "emqx_kafka_hook.host", [
+  {datatype, string}
+]}.
+
+{mapping, "kafka.hook.port", "emqx_kafka_hook.port", [
+  {datatype, string}
+]}.
+
+{mapping, "kafka.hook.topic", "emqx_kafka_hook.topic", [
+  {datatype, string}
+]}.
+
+{mapping, "kafka.hook.partition_workers", "emqx_kafka_hook.partition_workers", [
+  {datatype, string}
+]}.
+
+{mapping, "kafka.hook.workername", "emqx_kafka_hook.workername", [
+  {datatype, string}
+]}.
