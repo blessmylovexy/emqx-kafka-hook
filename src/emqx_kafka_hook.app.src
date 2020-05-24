@@ -3,7 +3,7 @@
   {vsn, "git"},
   {modules, []},
   {registered, [emqx_kafka_hook_sup]},
-  {applications, [kernel,stdlib,brod]},
+  {applications, [kernel,stdlib,erlkaf]},
   {mod, {emqx_kafka_hook_app,[]}},
   {env, []},
   {licenses, ["Apache-2.0"]},

@@ -220,13 +220,15 @@ on_message_acked(#{clientid := _ClientId}, Message, _Env) ->
 
 
 brod_init() ->
+    erlkaf:start(),
     Topic = application:get_env(?APP, topic, undefined),
-    KafkaHosts = [{"kafka01.node.niu.local", 9092}],
-    ClientConfig = [{reconnect_cool_down_seconds, 10},{query_api_versions,true}],
-    {ok, _} = application:ensure_all_started(brod),
-    ok = brod:start_client(KafkaHosts, brod_client_1, ClientConfig),
-    ok = brod:start_producer(brod_client_1, Topic, _ProducerConfig = []),
-    io:format("Init brod with topic:~s", [Topic]).
+    ProducerConfig = [
+        {bootstrap_servers, <<"kafka01.node.niu.local:9092">>},
+        {delivery_report_only_error, false},
+        {delivery_report_callback, ?MODULE}
+    ],
+    ok = erlkaf:create_producer(client_producer, ProducerConfig),
+    ok = erlkaf:create_topic(client_producer, Topic, [{request_required_acks, 1}]).
 
 
 produce_kafka_payload(Key, Message) ->
@@ -234,7 +236,7 @@ produce_kafka_payload(Key, Message) ->
     {ok, MessageJson} = emqx_json:safe_encode(Message),
     Payload = iolist_to_binary(MessageJson),
     emqx_metrics:inc('kafkahook.kafka_publish'),
-    brod:produce_sync(brod_client_1,Topic,0,Key,Payload).
+    ok = erlkaf:produce(client_producer, Topic, Key, Payload).
 
 parse_from(#message{from = ClientId, headers = #{username := Username}}) ->
     {ClientId, maybe(Username)};
