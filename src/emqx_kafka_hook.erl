@@ -237,10 +237,7 @@ produce_kafka_payload(Key, Message) ->
     {ok, MessageJson} = emqx_json:safe_encode(Message),
     Payload = iolist_to_binary(MessageJson),
     emqx_metrics:inc('kafkahook.kafka_publish'),
-    PartitionFun = fun(_Topic, PartitionsCount, _Key, _Value) ->
-                   {ok, crypto:rand_uniform(PartitionsCount)}
-               end,
-    brod:produce_sync(brod_client_1, Topic, PartitionFun, Key, Payload).
+    brod:produce_sync(brod_client_1, Topic, 0, Key, Payload).
 
 parse_from(#message{from = ClientId, headers = #{username := Username}}) ->
     {ClientId, maybe(Username)};
