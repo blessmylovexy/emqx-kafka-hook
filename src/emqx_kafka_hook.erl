@@ -61,7 +61,7 @@ register_metrics() ->
                                            'kafkahook.kafka_publish']).
 
 load(Env) ->
-    ekaf_init(),
+    brod_init(),
     emqx:hook('client.connected',    {?MODULE, on_client_connected, [Env]}),
     emqx:hook('client.disconnected', {?MODULE, on_client_disconnected, [Env]}),
     emqx:hook('session.created',     {?MODULE, on_session_created, [Env]}),
@@ -219,7 +219,7 @@ on_message_acked(#{clientid := _ClientId}, Message = #message{topic = Topic, fla
     ok.
 
 
-brod_init(_Env) ->
+brod_init() ->
     {ok, _} = application:ensure_all_started(brod),
     KafkaTopic =  "test-http2kafka",
     KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
