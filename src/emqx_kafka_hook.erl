@@ -222,6 +222,7 @@ on_message_acked(#{clientid := _ClientId}, Message, _Env) ->
 brod_init() ->
     Topic = application:get_env(?APP, topic, undefined),
     KafkaHosts = [{"kafka01.node.niu.local", 9092}],
+    {ok, _} = application:ensure_all_started(brod),
     ok = brod:start_client(KafkaHosts, brod_client_1),
     ok = brod:start_producer(brod_client_1, Topic, _ProducerConfig = []),
     io:format("Init brod with topic:~s", [Topic]).
