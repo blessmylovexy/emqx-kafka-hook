@@ -18,7 +18,6 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
--include_lib("brod/include/brod_int.hrl").
 
 -define(APP, emqx_kafka_hook).
 
@@ -221,23 +220,20 @@ on_message_acked(#{clientid := _ClientId}, Message, _Env) ->
 
 
 brod_init() ->
-    Topic =  application:get_env(?APP, topic, undefined),
-    KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
+    erlkaf:start(),
 
-    ClientConfig = [],
-
-    {ok, _} = application:ensure_all_started(brod),
-    ok = brod:start_client(KafkaBootstrapEndpoints, brod_client_1, ClientConfig),
-    ok = brod:start_producer(brod_client_1, Topic, _ProducerConfig = []),
-    io:format("Init brod with topic:~s", [Topic]).
-
+    ProducerConfig = [
+        {bootstrap_servers, <<"kafka01.node.niu.local:9092">>},
+        {delivery_report_only_error, false}
+    ],
+    ok = erlkaf:create_producer(client_producer, ProducerConfig).
 
 produce_kafka_payload(Key, Message) ->
     Topic = application:get_env(?APP, topic, undefined),
     {ok, MessageJson} = emqx_json:safe_encode(Message),
     Payload = iolist_to_binary(MessageJson),
     emqx_metrics:inc('kafkahook.kafka_publish'),
-    brod:produce_sync(brod_client_1, Topic, 0, Key, Payload).
+    erlkaf:produce(client_producer, Topic, Key, Payload).
 
 parse_from(#message{from = ClientId, headers = #{username := Username}}) ->
     {ClientId, maybe(Username)};
