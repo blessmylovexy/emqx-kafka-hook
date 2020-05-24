@@ -18,6 +18,7 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/logger.hrl").
+-include("brod/include/brod.hrl").
 
 -define(APP, emqx_kafka_hook).
 
@@ -222,8 +223,9 @@ on_message_acked(#{clientid := _ClientId}, Message, _Env) ->
 brod_init() ->
     Topic = application:get_env(?APP, topic, undefined),
     KafkaHosts = [{"kafka01.node.niu.local", 9092}],
+    ClientConfig = [{reconnect_cool_down_seconds, 10},{query_api_versions,true}],
     {ok, _} = application:ensure_all_started(brod),
-    ok = brod:start_client(KafkaHosts, brod_client_1),
+    ok = brod:start_client(KafkaHosts, brod_client_1, ClientConfig),
     ok = brod:start_producer(brod_client_1, Topic, _ProducerConfig = []),
     io:format("Init brod with topic:~s", [Topic]).
 
