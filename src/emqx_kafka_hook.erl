@@ -218,29 +218,29 @@ on_message_acked(#{clientid := _ClientId}, Message = #message{topic = Topic, fla
     produce_kafka_payload(FromClientId, Params),
     ok.
 
-ekaf_init() ->
-    KafkaHost = application:get_env(?APP, host, undefined),
-    KafkaPort = application:get_env(?APP, port, undefined),
-    KafkaTopic =  application:get_env(?APP, topic, undefined),
-    KafkaPartitionWorkers = application:get_env(?APP, partition_workers, undefined),
 
-	application:load(ekaf),
-	application:set_env(ekaf, ekaf_max_buffer_size, [{ekaf_max_buffer_size, 100}]),
-	application:set_env(ekaf, ekaf_buffer_ttl, 1000),
-	application:set_env(ekaf, ekaf_bootstrap_broker, {KafkaHost, list_to_integer(KafkaPort)}),
-	application:set_env(ekaf, ekaf_bootstrap_topics, KafkaTopic),
-	application:set_env(ekaf, ekaf_per_partition_workers, list_to_integer(KafkaPartitionWorkers)),
-	application:set_env(ekaf, ekaf_partition_strategy, custom),
-    {ok, _} = application:ensure_all_started(gproc),
-    {ok, _} = application:ensure_all_started(ekaf),
-    io:format("ekaf server with ~s:~s, topic: ~s, per_partition_workers: ~s", [KafkaHost, KafkaPort, KafkaTopic, KafkaPartitionWorkers]).
+brod_init(_Env) ->
+    {ok, _} = application:ensure_all_started(brod),
+    KafkaTopic =  "test-http2kafka",
+    KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
+
+    ClientConfig = [{reconnect_cool_down_seconds, 10},
+                    { query_api_versions, false}],
+
+    ok = brod:start_client(KafkaBootstrapEndpoints, brod_client, ClientConfig),
+    ok = brod:start_producer(brod_client, KafkaTopic, _ProducerConfig = []),
+    ?LOG(info, "Init brod with topic:~s", [KafkaTopic]).
+
 
 produce_kafka_payload(Key, Message) ->
     Topic = application:get_env(?APP, topic, undefined),
     {ok, MessageJson} = emqx_json:safe_encode(Message),
     Payload = iolist_to_binary(MessageJson),
     emqx_metrics:inc('kafkahook.kafka_publish'),
-    ekaf:produce_async(list_to_binary(Topic), {Key, Payload}).
+    PartitionFun = fun(_Topic, PartitionsCount, _Key, _Value) ->
+                   {ok, crypto:rand_uniform(PartitionsCount)}
+               end,
+    brod:produce_sync(brod_client, Topic, PartitionFun, Key, Payload).
 
 parse_from(#message{from = ClientId, headers = #{username := Username}}) ->
     {ClientId, maybe(Username)};
