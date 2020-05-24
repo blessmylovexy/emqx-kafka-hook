@@ -203,7 +203,7 @@ on_message_publish(Message = #message{topic = Topic, flags = #{retain := Retain}
     produce_kafka_payload(FromClientId, Params),
     {ok, Message}.
 
-on_message_acked(#{clientid := _ClientId}, Message = #message{topic = Topic, flags = #{retain := Retain}}, _Env) ->
+on_message_acked(#{clientid := _ClientId}, Message, _Env) ->
     emqx_metrics:inc('kafkahook.message_acked'),
     {FromClientId, FromUsername} = parse_from(Message),
     WorkerName = application:get_env(?APP, workername, undefined),
@@ -221,15 +221,17 @@ on_message_acked(#{clientid := _ClientId}, Message = #message{topic = Topic, fla
 
 
 brod_init() ->
-    KafkaTopic =  application:get_env(?APP, topic, undefined),
+    Topic =  application:get_env(?APP, topic, undefined),
     KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
 
     ClientConfig = [{reconnect_cool_down_seconds, 10},
-                    { query_api_versions, false}],
-                    
+                    {query_api_versions, false}],
+
     {ok, _} = application:ensure_all_started(brod),
-    ok = brod:start_client(KafkaBootstrapEndpoints, brod_client, ClientConfig),
-    ok = brod:start_producer(brod_client, KafkaTopic, _ProducerConfig = []).
+    ok = brod:start_client(KafkaBootstrapEndpoints, brod_client_1, ClientConfig),
+    ok = brod:start_producer(brod_client_1, Topic, _ProducerConfig = []),
+    io:format("Init brod with topic:~s", [Topic]).
+
 
 produce_kafka_payload(Key, Message) ->
     Topic = application:get_env(?APP, topic, undefined),
@@ -239,7 +241,7 @@ produce_kafka_payload(Key, Message) ->
     PartitionFun = fun(_Topic, PartitionsCount, _Key, _Value) ->
                    {ok, crypto:rand_uniform(PartitionsCount)}
                end,
-    brod:produce_sync(brod_client, Topic, PartitionFun, Key, Payload).
+    brod:produce_sync(brod_client_1, Topic, PartitionFun, Key, Payload).
 
 parse_from(#message{from = ClientId, headers = #{username := Username}}) ->
     {ClientId, maybe(Username)};
