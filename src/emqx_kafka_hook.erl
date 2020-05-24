@@ -224,8 +224,7 @@ brod_init() ->
     Topic =  application:get_env(?APP, topic, undefined),
     KafkaBootstrapEndpoints = [{"kafka01.node.niu.local", 9092},{"kafka02.node.niu.local", 9092},{"kafka03.node.niu.local", 9092}], 
 
-    ClientConfig = [{reconnect_cool_down_seconds, 10},
-                    {query_api_versions, false}],
+    ClientConfig = [],
 
     {ok, _} = application:ensure_all_started(brod),
     ok = brod:start_client(KafkaBootstrapEndpoints, brod_client_1, ClientConfig),
